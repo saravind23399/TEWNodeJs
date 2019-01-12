@@ -4,10 +4,9 @@ const cors = require('cors')
 const http = require('http');
 const mongoose = require('mongoose');
 
-
 const port = process.env.PORT || 3000
 var production = false;
-
+const app = express();
 
 if (production) {
     app.use(cors({ origin: 'http://site.to.be.deployed' }));
@@ -24,8 +23,6 @@ mongoose.connection.on('connected', () => {
 mongoose.connection.on('error', (err) => {
     console.log('Database error ' + err);
 });
-
-const app = express();
 
 app.get('/', (req, res) => {
     res.send('HELLO WORLD!');
