@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+var nodemailer = require('nodemailer');
 const config = require('../Config/app.config');
 const User = require('../Models/userModel.js');
 const bcrypt = require('bcryptjs')
@@ -28,16 +29,32 @@ router.post('/newParticipant', (req, res) => {
                         userProfileName: req.body.userProfileName,
                         role: 'Participant'
                     })
-                    newParticipant.save((err, docs) => {
-                        if (err) {
+                    newParticipant.save((saveError, docs) => {
+                        if (saveError) {
                             res.json({
                                 success: false,
                                 message: err
                             })
                         } else {
-                            res.json({
-                                success: true,
-                                message: 'Participant Created successfully'
+                            var transporter = nodemailer.createTransport(config.mailCredentials);
+                            var mailOptions = {
+                                from: config.mailCredentials.auth.user,
+                                to: newParticipant.username,
+                                subject: 'TEW Workshop 2019 Reg.',
+                                html: '<b> Thanks for participating in TEW Workshop 2019. </b> <hr/> You have been selected to attend the workshop. Below are your credentials to access <a href="www.mepcoeng.ac.in">our online portal</a> <br/> Username : ' + newParticipant.username + '<br/>Passowrd : ' + req.body.password
+                            }
+                            transporter.sendMail(mailOptions, (mailError, info) => {
+                                if (mailError) {
+                                    res.json({
+                                        success: false,
+                                        message: mailError
+                                    })
+                                } else {
+                                    res.json({
+                                        success: true,
+                                        message: 'Participant Created successfully'
+                                    })
+                                }
                             })
                         }
                     });

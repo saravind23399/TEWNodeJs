@@ -7,6 +7,13 @@ config = {
     },
     pagination: {
         perPage: 10
+    },
+    mailCredentials: {
+        service: 'gmail',
+        auth: {
+            user: 'saravind23399@gmail.com',
+            pass: 'Aravindiam29#'
+        }
     }
 }
 
