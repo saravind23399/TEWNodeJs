@@ -51,22 +51,70 @@ router.post('/updatePassword', (req, res) => {
     if (!ObjectId.isValid(req.body.id))
         return res.status(400).send(`NO RECORD WITH GIVEN ID : ${req.params.id}`);
     else {
-        bcrypt.hash(req.body.password, salt, (hashError, hash) => {
-            if (hashError) {
+        User.findById(req.body.id, (findError, foundUser) => {
+            if (findError) {
                 res.json({
                     success: false,
                     message: hashError
                 })
             } else {
-                User.findByIdAndUpdate(req.body.id, {
-                    $set: {
-                        
+                bcrypt.genSalt(10, (saltError, salt) => {
+                    if (saltError) {
+                        res.json({
+                            success: false,
+                            message: hashError
+                        })
+                    } else {
+                        bcrypt.compare(req.body.previousPassword, foundUser.password, (compareError, compareResult) => {
+                            if (compareError) {
+                                res.json({
+                                    success: false,
+                                    message: hashError
+                                })
+                            } else {
+                                if (compareResult) {
+
+                                    bcrypt.hash(req.body.newPassword, salt, (hashError, hash) => {
+                                        if (hashError) {
+                                            res.json({
+                                                success: false,
+                                                message: hashError
+                                            })
+                                        } else {
+                                            User.findByIdAndUpdate(req.body.id, {
+                                                $set: {
+                                                    password: hash
+                                                }
+                                            }, (updateError, docs) => {
+                                                if (updateError) {
+                                                    res.json({
+                                                        success: false,
+                                                        message: updateError
+                                                    })
+                                                } else {
+                                                    res.json({
+                                                        succes: true,
+                                                        message: 'Your password has been successfully changed'
+                                                    })
+                                                }
+                                            })
+                                        }
+                                    });
+                                } else {
+                                    res.json({
+                                        success: false,
+                                        message: 'Your Previous password does not match!'
+                                    })
+                                }
+                            }
+                        })
                     }
-                })
+                });
             }
-        });
+        })
     }
-})
+});
+
 
 router.post('/removeParticipant', (req, res) => {
     if (!ObjectId.isValid(req.body.id))
