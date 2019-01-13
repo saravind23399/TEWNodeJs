@@ -6,6 +6,9 @@ const http = require('http');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 
+//Route imports
+const userRoute = require('./Routes/userRoute')
+
 //Environment Setup
 const port = process.env.PORT || 3000
 var production = false;
@@ -23,7 +26,6 @@ if (production) {
 }
 
 //Mongoose Configuration
-
 //Connect to Database
 mongoose.connect(config.database.name, { useNewUrlParser: true });
 
@@ -36,6 +38,9 @@ mongoose.connection.on('connected', () => {
 mongoose.connection.on('error', (err) => {
     console.log('Database error ' + err);
 });
+
+//Routes
+app.use('/users', userRoute)
 
 //Test Route
 app.get('/', (req, res) => {
