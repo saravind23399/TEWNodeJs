@@ -1,20 +1,32 @@
+/*
+    Author : Aravind S
+    Date : 13-JANUARY-2019
+    Description : This Route handles the user actions and uploading of files by speakers and other admins
+*/
+
+// Module Imports
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
+const bcrypt = require('bcryptjs')
+const multer = require('multer')
+var ObjectId = require('mongoose').Types.ObjectId;
+
+// Application Configuration Import
 const config = require('../Config/app.config');
+
+// Model Imports
 const User = require('../Models/userModel.js');
 const FileUpload = require('../Models/fileUpload.js')
-const bcrypt = require('bcryptjs')
-var ObjectId = require('mongoose').Types.ObjectId;
-const path = require('path')
-const multer = require('multer')
 
+
+// Handles file Upload and stores in the directory ../AssetsFiles
 router.post('/uploadFile', (req, res) => {
     var fileName = ""
     var upload = multer({
         storage: multer.diskStorage({
             destination: function (req, file, callback) {
-                callback(null, './Assets/Files/')
+                callback(null, '../Assets/Files/')
             },
             filename: function (req, file, cb) {
                 cb(null, file.originalname)
@@ -50,6 +62,8 @@ router.post('/uploadFile', (req, res) => {
     })
 })
 
+// Adds a new User to the Database by generating a hash with 10 rounds of salt generation
+// and mails the user, the username and password needed to access the portal
 router.post('/newParticipant', (req, res) => {
     var hashedPassword = '';
     bcrypt.genSalt(10, (saltError, salt) => {
@@ -108,6 +122,7 @@ router.post('/newParticipant', (req, res) => {
     });
 })
 
+//Updates the password of the user by comparing the current password hash and then updates the same
 router.post('/updatePassword', (req, res) => {
     if (!ObjectId.isValid(req.body.id))
         return res.status(400).send(`NO RECORD WITH GIVEN ID : ${req.params.id}`);
@@ -176,6 +191,7 @@ router.post('/updatePassword', (req, res) => {
     }
 });
 
+//Removes the participant from the Database
 router.post('/removeParticipant', (req, res) => {
     if (!ObjectId.isValid(req.body.id))
         return res.status(400).send(`NO RECORD WITH GIVEN ID : ${req.params.id}`);
@@ -198,8 +214,10 @@ router.post('/removeParticipant', (req, res) => {
     }
 })
 
+// Testing Route used for checking random Stuff :P
 router.get('/test', (req, res) => {
     res.send('Test Route!!!');
 })
 
+//Exports the route
 module.exports = router;
