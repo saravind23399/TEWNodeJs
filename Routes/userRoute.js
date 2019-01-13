@@ -1,10 +1,54 @@
 const express = require('express');
 const router = express.Router();
-var nodemailer = require('nodemailer');
+const nodemailer = require('nodemailer');
 const config = require('../Config/app.config');
 const User = require('../Models/userModel.js');
+const FileUpload = require('../Models/fileUpload.js')
 const bcrypt = require('bcryptjs')
 var ObjectId = require('mongoose').Types.ObjectId;
+const path = require('path')
+const multer = require('multer')
+
+router.post('/uploadFile', (req, res) => {
+    var fileName = ""
+    var upload = multer({
+        storage: multer.diskStorage({
+            destination: function (req, file, callback) {
+                callback(null, './Assets/Files/')
+            },
+            filename: function (req, file, cb) {
+                cb(null, file.originalname)
+                this.fileName = file.originalname
+                const newFileUpload = new FileUpload({
+                    speakerId: req.body.speakerId,
+                    fileName: file.originalname
+                })
+                newFileUpload.save((saveError, docs) => {
+                    if (saveError) {
+                        res.json({
+                            success: false,
+                            msg: 'Cannot Upload File. File Upload Failed'
+                        })
+                    } else {}
+                })
+            }
+        })
+    }).any()
+
+    upload(request, res, function (err) {
+        if (!err) {
+            res.json({
+                success: true,
+                msg: 'File Uploaded Successfully'
+            })
+        } else {
+            res.json({
+                success: false,
+                msg: 'File Upload Failed. Try Again'
+            });
+        }
+    })
+})
 
 router.post('/newParticipant', (req, res) => {
     var hashedPassword = '';
@@ -132,7 +176,6 @@ router.post('/updatePassword', (req, res) => {
     }
 });
 
-
 router.post('/removeParticipant', (req, res) => {
     if (!ObjectId.isValid(req.body.id))
         return res.status(400).send(`NO RECORD WITH GIVEN ID : ${req.params.id}`);
@@ -143,7 +186,7 @@ router.post('/removeParticipant', (req, res) => {
             if (!err) {
                 res.json({
                     success: true,
-                    msg: 'User Participant'
+                    msg: 'Participant Removed Successfully'
                 });
             } else {
                 res.json({
