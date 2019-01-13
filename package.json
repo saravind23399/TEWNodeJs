@@ -1,0 +1,27 @@
+{
+  "name": "tewnodejs",
+  "version": "1.0.0",
+  "description": "TEW Workshop - NodeJs",
+  "main": "index.js",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.16.4",
+    "mongoose": "^5.4.3",
+    "mongoose-paginate": "^5.0.3",
+    "mongoose-pagination": "^1.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saravind23399/TEWNodeJs.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/saravind23399/TEWNodeJs/issues"
+  },
+  "homepage": "https://github.com/saravind23399/TEWNodeJs#readme"
+}
