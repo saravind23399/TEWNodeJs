@@ -10,6 +10,7 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs')
 const multer = require('multer')
+const jwt = require('jsonwebtoken');
 var ObjectId = require('mongoose').Types.ObjectId;
 
 // Application Configuration Import
@@ -19,6 +20,76 @@ const config = require('../Config/app.config');
 const User = require('../Models/userModel.js');
 const FileUpload = require('../Models/fileUpload.js')
 
+//Authenticates the User
+router.post('/authenticate', (req, res) => {
+    User.findOne({
+        username: req.body.username
+    }, (findError, foundUser) => {
+        if (findError) {
+            res.json({
+                success: false,
+                msg: {
+                    userFound: false,
+                    passwordMatch: false,
+                    token: null,
+                    desc: 'Database Error'
+                }
+            })
+        } else {
+            if (foundUser) {
+                bcrypt.compare(req.body.password, foundUser.password, (compareError, compareResult) => {
+                    if (compareError) {
+                        res.json({
+                            success: false,
+                            msg: {
+                                userFound: false,
+                                passwordMatch: false,
+                                token: null,
+                                desc: 'Database Error'
+                            }
+                        })
+                    } else {
+                        if (compareResult) {
+                            res.json({
+                                success: true,
+                                msg: {
+                                    userFound: true,
+                                    passwordMatch: true,
+                                    token: jwt.sign({
+                                        data: foundUser
+                                    }, config.application.secret, {
+                                        expiresIn: 604800 // 1 week
+                                    }),
+                                    desc: 'You are successfully logged in'
+                                }
+                            })
+                        } else {
+                            res.json({
+                                success: false,
+                                msg: {
+                                    userFound: true,
+                                    passwordMatch: false,
+                                    token: null,
+                                    desc: 'Password is incorrect'
+                                }
+                            })
+                        }
+                    }
+                })
+            } else {
+                res.json({
+                    success: false,
+                    msg: {
+                        userFound: false,
+                        passwordMatch: false,
+                        token: null,
+                        desc: 'Email ID is not Selected. Please verify'
+                    }
+                })
+            }
+        }
+    })
+})
 
 // Handles file Upload and stores in the directory ../AssetsFiles
 router.post('/uploadFile', (req, res) => {
@@ -125,7 +196,7 @@ router.post('/newParticipant', (req, res) => {
 //Updates the password of the user by comparing the current password hash and then updates the same
 router.post('/updatePassword', (req, res) => {
     if (!ObjectId.isValid(req.body.id))
-        return res.status(400).send(`NO RECORD WITH GIVEN ID : ${req.params.id}`);
+        return res.status(400).send(`NO RECORD WITH GIVEN ID : ${req.body.id}`);
     else {
         User.findById(req.body.id, (findError, foundUser) => {
             if (findError) {

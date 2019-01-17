@@ -18,7 +18,8 @@ config = {
 
     // Application Configuration
     application: {
-        env: 'development'
+        env: 'development',
+        secret: 'secret'
     },
 
     // Pagination Configuration
