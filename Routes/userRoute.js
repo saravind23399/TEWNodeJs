@@ -23,7 +23,7 @@ const FileUpload = require('../Models/fileUpload.js')
 //Authenticates the User
 router.post('/authenticate', (req, res) => {
     User.findOne({
-        username: req.body.username
+        username: req.body.email_id
     }, (findError, foundUser) => {
         if (findError) {
             res.json({
