@@ -52,14 +52,20 @@ router.post('/authenticate', (req, res) => {
                         if (compareResult) {
                             res.json({
                                 success: true,
+                                user: {
+                                    name: foundUser.userProfileName,
+                                    email_id: foundUser.username,
+                                    id: foundUser._id,
+                                    role: foundUser.role
+                                },
                                 msg: {
                                     userFound: true,
                                     passwordMatch: true,
                                     token: jwt.sign({
                                         data: foundUser
                                     }, config.application.secret, {
-                                        expiresIn: 604800 // 1 week
-                                    }),
+                                            expiresIn: 604800 // 1 week
+                                        }),
                                     desc: 'You are successfully logged in'
                                 }
                             })
@@ -112,7 +118,7 @@ router.post('/uploadFile', (req, res) => {
                             success: false,
                             msg: 'Cannot Upload File. File Upload Failed'
                         })
-                    } else {}
+                    } else { }
                 })
             }
         })
@@ -144,7 +150,9 @@ router.post('/newParticipant', (req, res) => {
                 message: saltError
             })
         } else {
-            bcrypt.hash(req.body.password, salt, (hashError, hash) => {
+            var p = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var randPassword = [...Array(6)].reduce(a=>a+p[~~(Math.random()*p.length)],'');
+            bcrypt.hash(randPassword, salt, (hashError, hash) => {
                 if (hashError) {
                     res.json({
                         success: false,
@@ -153,10 +161,10 @@ router.post('/newParticipant', (req, res) => {
                 } else {
                     hashedPassword = hash;
                     var newParticipant = new User({
-                        username: req.body.username,
+                        username: req.body.email_id,
                         password: hashedPassword,
                         userProfileName: req.body.userProfileName,
-                        role: 'Participant'
+                        role: req.body.role
                     })
                     newParticipant.save((saveError, docs) => {
                         if (saveError) {
@@ -170,7 +178,7 @@ router.post('/newParticipant', (req, res) => {
                                 from: config.mailCredentials.auth.user,
                                 to: newParticipant.username,
                                 subject: 'TEW Workshop 2019 Reg.',
-                                html: '<b> Thanks for participating in TEW Workshop 2019. </b> <hr/> You have been selected to attend the workshop. Below are your credentials to access <a href="www.mepcoeng.ac.in">our online portal</a> <br/> Username : ' + newParticipant.username + '<br/>Passowrd : ' + req.body.password
+                                html: '<b> Thanks for participating in TEW Workshop 2019. </b> <hr/> You have been selected to attend the workshop. Below are your credentials to access <a href="www.mepcoeng.ac.in">our online portal</a> <br/> Username : ' + newParticipant.username + '<br/>Password : ' + randPassword
                             }
                             transporter.sendMail(mailOptions, (mailError, info) => {
                                 if (mailError) {
@@ -195,72 +203,80 @@ router.post('/newParticipant', (req, res) => {
 
 //Updates the password of the user by comparing the current password hash and then updates the same
 router.post('/updatePassword', (req, res) => {
-    if (!ObjectId.isValid(req.body.id))
-        return res.status(400).send(`NO RECORD WITH GIVEN ID : ${req.body.id}`);
-    else {
-        User.findById(req.body.id, (findError, foundUser) => {
-            if (findError) {
-                res.json({
-                    success: false,
-                    message: hashError
-                })
-            } else {
-                bcrypt.genSalt(10, (saltError, salt) => {
-                    if (saltError) {
-                        res.json({
-                            success: false,
-                            message: hashError
-                        })
-                    } else {
-                        bcrypt.compare(req.body.previousPassword, foundUser.password, (compareError, compareResult) => {
-                            if (compareError) {
+    User.find({username: req.body.email_id}, (findError, foundUser) => {
+        if (findError) {
+            res.json({
+                success: false,
+                message: hashError
+            })
+        } else {
+            bcrypt.genSalt(10, (saltError, salt) => {
+                if (saltError) {
+                    res.json({
+                        success: false,
+                        message: saltError
+                    })
+                } else {
+                    bcrypt.compare(req.body.oldPassword, foundUser[0].password, (compareError, compareResult) => {
+                        if (compareError) {
+                            res.json({
+                                success: false,
+                                message: compareError
+                            })
+                            console.log(compareError);
+                        } else {
+                            if (compareResult) {
+
+                                bcrypt.hash(req.body.newPassword, salt, (hashError, hash) => {
+                                    if (hashError) {
+                                        res.json({
+                                            success: false,
+                                            message: hashError
+                                        })
+                                    } else {
+                                        User.update({username: req.body.email_id}, {
+                                            $set: {
+                                                password: hash
+                                            }
+                                        }, (updateError, docs) => {
+                                            if (updateError) {
+                                                res.json({
+                                                    success: false,
+                                                    message: updateError
+                                                })
+                                                console.log(updateError);
+                                            } else {
+                                                res.json({
+                                                    success: true,
+                                                    message: 'Your password has been successfully changed'
+                                                })
+                                            }
+                                        })
+                                    }
+                                });
+                            } else {
                                 res.json({
                                     success: false,
-                                    message: hashError
+                                    message: 'Your OLD password does not match!'
                                 })
-                            } else {
-                                if (compareResult) {
-
-                                    bcrypt.hash(req.body.newPassword, salt, (hashError, hash) => {
-                                        if (hashError) {
-                                            res.json({
-                                                success: false,
-                                                message: hashError
-                                            })
-                                        } else {
-                                            User.findByIdAndUpdate(req.body.id, {
-                                                $set: {
-                                                    password: hash
-                                                }
-                                            }, (updateError, docs) => {
-                                                if (updateError) {
-                                                    res.json({
-                                                        success: false,
-                                                        message: updateError
-                                                    })
-                                                } else {
-                                                    res.json({
-                                                        succes: true,
-                                                        message: 'Your password has been successfully changed'
-                                                    })
-                                                }
-                                            })
-                                        }
-                                    });
-                                } else {
-                                    res.json({
-                                        success: false,
-                                        message: 'Your Previous password does not match!'
-                                    })
-                                }
                             }
-                        })
-                    }
-                });
-            }
-        })
-    }
+                        }
+                    })
+                }
+            });
+        }
+    })
 });
+
+//Get all the participants list
+router.get('/All/:role', (req, res) => {
+    User.find({ role: req.params.role }, function (err, docs) {
+        if (!err) {
+            res.send(docs);
+        }
+    })
+})
+
 
 //Removes the participant from the Database
 router.post('/removeParticipant', (req, res) => {

@@ -23,7 +23,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 if (production) {
     app.use(cors({ origin: 'http://site.to.be.deployed' }));
 } else {
-    app.use(cors({ origin: 'http://localhost:3000' }));
+    app.use(cors({ origin: 'http://localhost:4200' }));
+    //app.use(cors({ origin: 'http://localhost:3000' }));
 }
 
 //Mongoose Configuration
