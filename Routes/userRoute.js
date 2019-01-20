@@ -12,6 +12,7 @@ const bcrypt = require('bcryptjs')
 const multer = require('multer')
 const jwt = require('jsonwebtoken');
 var ObjectId = require('mongoose').Types.ObjectId;
+var path = require('path')
 
 // Application Configuration Import
 const config = require('../Config/app.config');
@@ -98,18 +99,21 @@ router.post('/authenticate', (req, res) => {
 })
 
 // Handles file Upload and stores in the directory ../AssetsFiles
-router.post('/uploadFile', (req, res) => {
+
+
+router.post('/uploadFile/:id', (request, res) => {
     var fileName = ""
     var upload = multer({
         storage: multer.diskStorage({
-            destination: function (req, file, callback) {
-                callback(null, '../Assets/Files/')
+            destination: function (req, file, cb) {
+                cb(null, './upload')
             },
             filename: function (req, file, cb) {
                 cb(null, file.originalname)
-                this.fileName = file.originalname
+                this.fileName = file.originalname;
+
                 const newFileUpload = new FileUpload({
-                    speakerId: req.body.speakerId,
+                    speakerId: req.params.id,
                     fileName: file.originalname
                 })
                 newFileUpload.save((saveError, docs) => {
@@ -123,21 +127,44 @@ router.post('/uploadFile', (req, res) => {
             }
         })
     }).any()
-
     upload(request, res, function (err) {
         if (!err) {
             res.json({
-                success: true,
-                msg: 'File Uploaded Successfully'
+                error: false,
+                msg: 'FIle Uploaded Successfully'
             })
         } else {
-            res.json({
-                success: false,
-                msg: 'File Upload Failed. Try Again'
-            });
+            res.json(err);
         }
     })
 })
+
+
+router.get('/files/:id',(req,res)=>{
+    FileUpload.find({speakerId:req.params.id},(err,docs)=>{
+        if(!err){
+            res.send(docs);
+        }
+    })
+});
+
+router.get('/deleteFile/:id',(req,res)=>{
+    FileUpload.findByIdAndRemove(req.params.id,(err,docs)=>{
+        if(!err){
+            res.json({
+                success:true,
+                msg: "File deleted successfully"
+            })
+        }
+        else {
+            res.json({
+                success: false,
+                msg: "Some error,while deleting the file"
+            })
+        }
+    })
+});
+
 
 // Adds a new User to the Database by generating a hash with 10 rounds of salt generation
 // and mails the user, the username and password needed to access the portal
@@ -151,7 +178,7 @@ router.post('/newParticipant', (req, res) => {
             })
         } else {
             var p = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            var randPassword = [...Array(6)].reduce(a=>a+p[~~(Math.random()*p.length)],'');
+            var randPassword = [...Array(6)].reduce(a => a + p[~~(Math.random() * p.length)], '');
             bcrypt.hash(randPassword, salt, (hashError, hash) => {
                 if (hashError) {
                     res.json({
@@ -203,7 +230,7 @@ router.post('/newParticipant', (req, res) => {
 
 //Updates the password of the user by comparing the current password hash and then updates the same
 router.post('/updatePassword', (req, res) => {
-    User.find({username: req.body.email_id}, (findError, foundUser) => {
+    User.find({ username: req.body.email_id }, (findError, foundUser) => {
         if (findError) {
             res.json({
                 success: false,
@@ -234,7 +261,7 @@ router.post('/updatePassword', (req, res) => {
                                             message: hashError
                                         })
                                     } else {
-                                        User.update({username: req.body.email_id}, {
+                                        User.update({ username: req.body.email_id }, {
                                             $set: {
                                                 password: hash
                                             }
