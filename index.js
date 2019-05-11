@@ -22,6 +22,9 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 
+// CORS Middleware
+app.use(cors({origin: 'https://mepcotew.herokuapp.com'}))
+
 //Mongoose Configuration
 //Connect to Database
 mongoose.connect(config.database.name, {
